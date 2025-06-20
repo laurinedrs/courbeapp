@@ -1,28 +1,29 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Test Courbe Ritaline</title>
+  <meta charset="UTF-8">
+  <title>Courbe Ritaline - Test</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       margin: 0;
-      padding: 0;
+      padding: 1rem;
+      font-family: sans-serif;
     }
     canvas {
       width: 100% !important;
-      height: 100% !important;
+      max-width: 800px;
+      height: 400px !important;
     }
   </style>
 </head>
 <body>
+  <h1>Test Courbe de Ritaline</h1>
   <canvas id="ritalineChart"></canvas>
 
   <script>
     const canvas = document.getElementById('ritalineChart');
     const ctx = canvas.getContext('2d');
-
-    let chart;
 
     function concentrationRitalineLP(t, dose) {
       const LI = dose * 0.5;
@@ -62,9 +63,7 @@
         return `${heure}h${minutes.toString().padStart(2, '0')}`;
       });
 
-      if (chart) chart.destroy();
-
-      chart = new Chart(ctx, {
+      new Chart(ctx, {
         type: 'line',
         data: {
           labels,
@@ -99,15 +98,16 @@
               }
             }
           }
-        });
-      }
-      
-      // Si lancé sans WebView → injecte une démo
-      const testData = [
-        { heure: "08:00", dose: 10 },
-        { heure: "13:30", dose: 20 }
-      ];
-      createChart(testData);
+        }
+      });
+    }
+
+    // ✅ Simulation de 2 doses pour test
+    const testData = [
+      { heure: "08:00", dose: 10 },
+      { heure: "13:00", dose: 20 }
+    ];
+    createChart(testData);
   </script>
 </body>
 </html>
