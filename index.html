@@ -1,124 +1,117 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <title>Courbe de Ritaline LP</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 1rem;
-      font-family: sans-serif;
-      background: #fff;
-    }
-    canvas {
-      width: 100% !important;
-      max-width: 1000px;
-      height: 400px !important;
-      margin: auto;
-      display: block;
-    }
-  </style>
-</head>
-<body>
-  <canvas id="ritalineChart"></canvas>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Courbe de Ritaline LP</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      canvas {
+        width: 100% !important;
+        height: 100% !important;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="ritalineChart"></canvas>
 
-  <script>
-    const canvas = document.getElementById('ritalineChart');
-    const ctx = canvas.getContext('2d');
-    let chart;
+    <script>
+      const canvas = document.getElementById('ritalineChart');
+      const ctx = canvas.getContext('2d');
 
-    function concentrationRitalineLP(t, dose) {
-      const LI = dose * 0.5;
-      const LP = dose * 0.5;
+      let chart;
 
-      const C_LI = LI * Math.exp(-1.2 * t);
+      function concentrationRitalineLP(t, dose) {
+        const LI = dose * 0.5;
+        const LP = dose * 0.5;
 
-      const delay = 3; // 3h avant que la LP commence à libérer
-      const tLP = Math.max(t - delay, 0);
-      const C_LP = LP * (tLP / 2) * Math.exp(-0.3 * tLP);
+        const C_LI = LI * Math.exp(-1.2 * t);
 
-      return C_LI + C_LP;
-    }
+        const delay = 3;
+        const tLP = Math.max(t - delay, 0);
+        const C_LP = LP * (tLP / 2) * Math.exp(-0.3 * tLP);
 
-    function createChart(doses) {
-      const heures = [];
-      for (let h = 6; h <= 22; h += 0.25) {
-        heures.push(h.toFixed(2));
+        return C_LI + C_LP;
       }
 
-      const concentrations = heures.map(h => {
-        const t = parseFloat(h);
-        let total = 0;
-        doses.forEach(({ heure, dose }) => {
-          const [hStr, mStr] = heure.split(":");
-          const heurePrise = parseInt(hStr) + parseInt(mStr) / 60;
-          const delta = t - heurePrise;
-          if (delta >= 0 && delta <= 12) {
-            total += concentrationRitalineLP(delta, parseFloat(dose));
-          }
+      function createChart(doses) {
+        const heures = [];
+        for (let h = 6; h <= 22; h += 0.25) {
+          heures.push(h.toFixed(2));
+        }
+
+        const concentrations = heures.map(h => {
+          const t = parseFloat(h);
+          let total = 0;
+          doses.forEach(({ heure, dose }) => {
+            const [hStr, mStr] = heure.split(":");
+            const heurePrise = parseInt(hStr) + parseInt(mStr) / 60;
+            const delta = t - heurePrise;
+            if (delta >= 0 && delta <= 12) {
+              total += concentrationRitalineLP(delta, parseFloat(dose));
+            }
+          });
+          return total.toFixed(2);
         });
-        return total.toFixed(2);
-      });
 
-      const labels = heures.map(h => {
-        const heure = Math.floor(h);
-        const minutes = Math.round((h - heure) * 60);
-        return `${heure}h${minutes.toString().padStart(2, '0')}`;
-      });
+        const labels = heures.map(h => {
+          const heure = Math.floor(h);
+          const minutes = Math.round((h - heure) * 60);
+          return `${heure}h${minutes.toString().padStart(2, '0')}`;
+        });
 
-      if (chart) chart.destroy();
+        if (chart) chart.destroy();
 
-      chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: 'Concentration de Ritaline (mg)',
-            data: concentrations,
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59,130,246,0.1)',
-            fill: true,
-            tension: 0.3,
-            pointRadius: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'mg dans le corps'
-              }
-            },
-            x: {
-              title: {
-                display: true,
-                text: 'Heure'
+        chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Concentration de Ritaline (mg)',
+              data: concentrations,
+              borderColor: 'blue',
+              backgroundColor: 'transparent',
+              fill: false,
+              tension: 0.3,
+              pointRadius: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'mg dans le corps'
+                }
               },
-              ticks: {
-                maxRotation: 90,
-                minRotation: 60
+              x: {
+                title: {
+                  display: true,
+                  text: 'Heure'
+                },
+                ticks: {
+                  maxRotation: 90,
+                  minRotation: 60
+                }
               }
             }
           }
+        });
+      }
+
+      window.addEventListener('message', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          createChart(data);
+        } catch (e) {
+          console.error("Erreur JSON :", e);
         }
       });
-    }
-
-    // Écoute des messages depuis Thunkable
-    window.addEventListener('message', (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (Array.isArray(data)) {
-          createChart(data);
-        }
-      } catch (e) {
-        console.error("Erreur JSON :", e);
-      }
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>
