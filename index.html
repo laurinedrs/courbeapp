@@ -1,95 +1,67 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Test Courbe de Ritaline</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 1rem;
-      font-family: sans-serif;
-    }
-    canvas {
-      width: 100% !important;
-      max-width: 800px;
-      height: 400px !important;
-    }
-  </style>
 </head>
 <body>
   <h1>Test Courbe de Ritaline</h1>
-  <canvas id="ritalineChart"></canvas>
+  <canvas id="ritalineChart" width="800" height="400"></canvas>
 
   <script>
     const ctx = document.getElementById('ritalineChart').getContext('2d');
-    let chartInstance = null;
+    let chart;
 
-    function concentrationRitalineLP(t, dose) {
-      const LI = dose * 0.5;
-      const LP = dose * 0.5;
+    function calculerCourbe(doses) {
+      // Crée un tableau d’heures toutes les 15 minutes de 6h à 22h
+      const labels = [];
+      const data = [];
 
-      const C_LI = LI * Math.exp(-1.2 * t);
-      const delay = 3;
-      const tLP = Math.max(t - delay, 0);
-      const C_LP = LP * (tLP / 2) * Math.exp(-0.3 * tLP);
+      for (let h = 6; h <= 22; h++) {
+        for (let m = 0; m < 60; m += 15) {
+          labels.push(`${h}h${m.toString().padStart(2, '0')}`);
+          data.push(0);
+        }
+      }
 
-      return C_LI + C_LP;
+      // Ajoute chaque dose
+      doses.forEach(d => {
+        const dose = parseFloat(d.dose); // ⚠️ conversion en nombre
+        const heureParts = d.heure.split('h');
+        const heure = parseInt(heureParts[0]);
+        const minute = parseInt(heureParts[1]);
+
+        const startIndex = ((heure - 6) * 4) + Math.floor(minute / 15);
+        if (startIndex >= 0 && startIndex < data.length) {
+          for (let i = 0; i < 20 && startIndex + i < data.length; i++) {
+            const t = i / 4;
+            const concentration = dose * (t / 2) * Math.exp(1 - t / 2);
+            data[startIndex + i] += concentration;
+          }
+        }
+      });
+
+      return { labels, data };
     }
 
-    function createChart(doses) {
-      const heures = [];
-      for (let h = 6; h <= 22; h += 0.25) {
-        heures.push(h.toFixed(2));
-      }
-
-      const concentrations = heures.map(h => {
-        const t = parseFloat(h);
-        let total = 0;
-        doses.forEach(entry => {
-          if (!entry.heure || !entry.dose) return;
-          const [hStr, mStr] = entry.heure.split(":");
-          const heurePrise = parseInt(hStr) + parseInt(mStr) / 60;
-          const delta = t - heurePrise;
-          if (delta >= 0 && delta <= 12) {
-            const doseNum = typeof entry.dose === "string" ? parseFloat(entry.dose) : entry.dose;
-            if (!isNaN(doseNum)) {
-              total += concentrationRitalineLP(delta, doseNum);
-            }
-          }
-        });
-        return total.toFixed(2);
-      });
-
-      const labels = heures.map(h => {
-        const heure = Math.floor(h);
-        const minutes = Math.round((h - heure) * 60);
-        return `${heure}h${minutes.toString().padStart(2, '0')}`;
-      });
-
-      if (chartInstance) {
-        chartInstance.destroy();
-      }
-
-      chartInstance = new Chart(ctx, {
+    function updateChart(labels, data) {
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels,
+          labels: labels,
           datasets: [{
             label: 'Concentration de Ritaline (mg)',
-            data: concentrations,
+            data: data,
             borderColor: 'blue',
-            backgroundColor: 'transparent',
-            fill: false,
-            tension: 0.3,
-            pointRadius: 0
+            borderWidth: 3,
+            fill: false
           }]
         },
         options: {
-          responsive: true,
           scales: {
             y: {
-              beginAtZero: true,
               title: {
                 display: true,
                 text: 'mg dans le corps'
@@ -99,10 +71,6 @@
               title: {
                 display: true,
                 text: 'Heure'
-              },
-              ticks: {
-                maxRotation: 90,
-                minRotation: 60
               }
             }
           }
@@ -110,20 +78,19 @@
       });
     }
 
-    // Fonction pour recevoir les messages Thunkable
-    window.addEventListener("message", function(event) {
+    window.addEventListener('message', (event) => {
+      console.log("💥 JSON brut reçu :", event.data);
+
       try {
-        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-        console.log("📨 Données reçues :", data);
-        if (Array.isArray(data)) {
-          createChart(data);
-        } else {
-          console.error("❌ Format invalide :", data);
-        }
-      } catch (e) {
-        console.error("❌ Erreur de parsing JSON :", e);
+        const doses = JSON.parse(event.data);
+        console.log("🧪 Données parsées :", doses);
+
+        const { labels, data } = calculerCourbe(doses);
+        updateChart(labels, data);
+      } catch (error) {
+        console.error("❌ Erreur de parsing JSON :", error);
       }
-    });
+    }, false);
   </script>
 </body>
 </html>
