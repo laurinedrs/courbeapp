@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -17,21 +17,21 @@
   </style>
 </head>
 <body>
+  <h1>Test Courbe de Ritaline</h1>
   <canvas id="ritalineChart"></canvas>
 
   <script>
     const canvas = document.getElementById('ritalineChart');
     const ctx = canvas.getContext('2d');
+    let chart;
 
     function concentrationRitalineLP(t, dose) {
       const LI = dose * 0.5;
       const LP = dose * 0.5;
-
       const C_LI = LI * Math.exp(-1.2 * t);
       const delay = 3;
       const tLP = Math.max(t - delay, 0);
       const C_LP = LP * (tLP / 2) * Math.exp(-0.3 * tLP);
-
       return C_LI + C_LP;
     }
 
@@ -61,7 +61,8 @@
         return `${heure}h${minutes.toString().padStart(2, '0')}`;
       });
 
-      new Chart(ctx, {
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
         type: 'line',
         data: {
           labels,
@@ -72,7 +73,8 @@
             backgroundColor: 'transparent',
             fill: false,
             tension: 0.3,
-            pointRadius: 0
+            pointRadius: 0,
+            borderWidth: 3
           }]
         },
         options: {
@@ -100,23 +102,19 @@
       });
     }
 
-    // 🔄 RECEPTION DEPUIS THUNKABLE
-    window.addEventListener("message", function(event) {
+    // 🧠 Réception depuis Thunkable
+    window.addEventListener("message", (event) => {
       try {
-        const json = JSON.parse(event.data);
-        console.log("✅ Message reçu :", json);
-        createChart(json);
+        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+        if (Array.isArray(data)) {
+          createChart(data);
+        } else {
+          console.error("Format de données incorrect :", data);
+        }
       } catch (e) {
-        console.error("❌ JSON invalide reçu :", event.data);
+        console.error("Erreur lors du parsing JSON :", e);
       }
-    });
-
-    // ✅ Valeur de test par défaut
-    const testData = [
-      { heure: "08:00", dose: 10 },
-      { heure: "13:00", dose: 20 }
-    ];
-    createChart(testData);
+    }, false);
   </script>
 </body>
 </html>
