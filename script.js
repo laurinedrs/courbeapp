@@ -6,10 +6,27 @@ function calculerEtAfficherCourbe(doses) {
     return `${heure}h${minute.toString().padStart(2, '0')}`;
   });
 
-  doses.forEach(d => {
+  console.log("📦 Doses reçues pour calcul :", doses);
+
+  doses.forEach((d, i) => {
     const dose = parseFloat(d.dose);
     const [h, m] = d.heure.split("h").map(Number);
     const startIndex = ((h - 6) * 4) + Math.floor(m / 15);
+
+    console.log(`🔹 Dose ${i + 1} :`, {
+      raw: d,
+      dose,
+      heure: d.heure,
+      h,
+      m,
+      startIndex
+    });
+
+    if (isNaN(dose) || isNaN(startIndex)) {
+      console.warn(`⚠️ Dose ${i + 1} ignorée (valeurs non valides)`);
+      return;
+    }
+
     if (startIndex >= 0 && startIndex < courbe.length) {
       courbe[startIndex] += dose * 0.3;
       if (startIndex + 1 < courbe.length) courbe[startIndex + 1] += dose * 0.4;
@@ -17,6 +34,8 @@ function calculerEtAfficherCourbe(doses) {
       if (startIndex + 3 < courbe.length) courbe[startIndex + 3] += dose * 0.1;
     }
   });
+
+  console.log("📈 Courbe finale :", courbe);
 
   const ctx = document.getElementById("myChart").getContext("2d");
   new Chart(ctx, {
@@ -39,9 +58,13 @@ function calculerEtAfficherCourbe(doses) {
 // ✉️ Réception Thunkable
 window.addEventListener("message", function(event) {
   try {
+    console.log("✉️ Donnée brute reçue de Thunkable :", event.data);
+
     const doses = JSON.parse(event.data);
+    console.log("✅ Donnée parsée en objet :", doses);
+
     calculerEtAfficherCourbe(doses);
   } catch (e) {
-    console.error("Erreur de parsing ou d'affichage :", e);
+    console.error("❌ Erreur de parsing ou d'affichage :", e);
   }
 });
