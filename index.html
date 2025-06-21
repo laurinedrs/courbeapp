@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <title>Test Courbe de Ritaline</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -17,11 +18,12 @@
   </style>
 </head>
 <body>
+  <h1>Test Courbe de Ritaline</h1>
   <canvas id="ritalineChart"></canvas>
 
   <script>
-    const canvas = document.getElementById('ritalineChart');
-    const ctx = canvas.getContext('2d');
+    const ctx = document.getElementById('ritalineChart').getContext('2d');
+    let chartInstance = null;
 
     function concentrationRitalineLP(t, dose) {
       const LI = dose * 0.5;
@@ -46,13 +48,14 @@
         let total = 0;
         doses.forEach(entry => {
           if (!entry.heure || !entry.dose) return;
-
           const [hStr, mStr] = entry.heure.split(":");
           const heurePrise = parseInt(hStr) + parseInt(mStr) / 60;
           const delta = t - heurePrise;
           if (delta >= 0 && delta <= 12) {
             const doseNum = typeof entry.dose === "string" ? parseFloat(entry.dose) : entry.dose;
-            total += concentrationRitalineLP(delta, doseNum);
+            if (!isNaN(doseNum)) {
+              total += concentrationRitalineLP(delta, doseNum);
+            }
           }
         });
         return total.toFixed(2);
@@ -64,7 +67,11 @@
         return `${heure}h${minutes.toString().padStart(2, '0')}`;
       });
 
-      new Chart(ctx, {
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
           labels,
@@ -103,21 +110,20 @@
       });
     }
 
-    // 🔽 THUNKABLE INJECTION ICI
-    const urlParams = new URLSearchParams(window.location.search);
-    const dataParam = urlParams.get('data');
-
-    let doses = [];
-    try {
-      if (dataParam) {
-        doses = JSON.parse(dataParam);
-        console.log("✅ Données reçues :", doses);
+    // Fonction pour recevoir les messages Thunkable
+    window.addEventListener("message", function(event) {
+      try {
+        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+        console.log("📨 Données reçues :", data);
+        if (Array.isArray(data)) {
+          createChart(data);
+        } else {
+          console.error("❌ Format invalide :", data);
+        }
+      } catch (e) {
+        console.error("❌ Erreur de parsing JSON :", e);
       }
-    } catch (e) {
-      console.error("Erreur de parsing JSON :", e);
-    }
-
-    createChart(doses);
+    });
   </script>
 </body>
 </html>
