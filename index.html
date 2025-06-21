@@ -106,17 +106,30 @@
       }
     });
 
-    // 🔁 Écoute les messages de Thunkable via Web Viewer
+    // 🔁 Corrigé : parse deux fois si nécessaire
     window.addEventListener("message", event => {
       try {
-        const data = JSON.parse(event.data);
-        if (Array.isArray(data)) {
-          createChart(data);
-        } else {
-          console.warn("Format de données inattendu :", data);
+        let payload = event.data;
+
+        // 1er parse : convertit la chaîne JSON vers un tableau ou objet
+        if (typeof payload === "string") {
+          payload = JSON.parse(payload);
         }
-      } catch (e) {
-        console.error("Erreur JSON :", e, "Contenu reçu :", event.data);
+
+        // 2e parse si on a encore une string dans un tableau
+        if (typeof payload === "string") {
+          payload = JSON.parse(payload);
+        }
+
+        // Vérification et affichage
+        if (Array.isArray(payload)) {
+          createChart(payload);
+        } else {
+          console.warn("Message non valide :", payload);
+        }
+
+      } catch (err) {
+        console.error("Erreur lors du parsing :", err, event.data);
       }
     });
   </script>
