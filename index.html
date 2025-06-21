@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Test Courbe de Ritaline</title>
   <style>
     body {
       margin: 0;
@@ -23,15 +24,16 @@
   <script>
     const canvas = document.getElementById('ritalineChart');
     const ctx = canvas.getContext('2d');
-    let chart;
 
     function concentrationRitalineLP(t, dose) {
       const LI = dose * 0.5;
       const LP = dose * 0.5;
+
       const C_LI = LI * Math.exp(-1.2 * t);
       const delay = 3;
       const tLP = Math.max(t - delay, 0);
       const C_LP = LP * (tLP / 2) * Math.exp(-0.3 * tLP);
+
       return C_LI + C_LP;
     }
 
@@ -44,12 +46,15 @@
       const concentrations = heures.map(h => {
         const t = parseFloat(h);
         let total = 0;
-        doses.forEach(({ heure, dose }) => {
-          const [hStr, mStr] = heure.split(":");
+        doses.forEach(entry => {
+          if (!entry.heure || !entry.dose) return;
+
+          const [hStr, mStr] = entry.heure.split(":");
           const heurePrise = parseInt(hStr) + parseInt(mStr) / 60;
           const delta = t - heurePrise;
           if (delta >= 0 && delta <= 12) {
-            total += concentrationRitalineLP(delta, parseFloat(dose));
+            const doseNum = typeof entry.dose === "string" ? parseFloat(entry.dose) : entry.dose;
+            total += concentrationRitalineLP(delta, doseNum);
           }
         });
         return total.toFixed(2);
@@ -61,8 +66,7 @@
         return `${heure}h${minutes.toString().padStart(2, '0')}`;
       });
 
-      if (chart) chart.destroy();
-      chart = new Chart(ctx, {
+      new Chart(ctx, {
         type: 'line',
         data: {
           labels,
@@ -73,8 +77,7 @@
             backgroundColor: 'transparent',
             fill: false,
             tension: 0.3,
-            pointRadius: 0,
-            borderWidth: 3
+            pointRadius: 0
           }]
         },
         options: {
@@ -102,19 +105,21 @@
       });
     }
 
-    // 🧠 Réception depuis Thunkable
-    window.addEventListener("message", (event) => {
-      try {
-        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-        if (Array.isArray(data)) {
-          createChart(data);
-        } else {
-          console.error("Format de données incorrect :", data);
-        }
-      } catch (e) {
-        console.error("Erreur lors du parsing JSON :", e);
+    // 🔽 THUNKABLE INJECTION ICI
+    const urlParams = new URLSearchParams(window.location.search);
+    const dataParam = urlParams.get('data');
+
+    let doses = [];
+    try {
+      if (dataParam) {
+        doses = JSON.parse(dataParam);
+        console.log("✅ Données reçues :", doses);
       }
-    }, false);
+    } catch (e) {
+      console.error("Erreur de parsing JSON :", e);
+    }
+
+    createChart(doses);
   </script>
 </body>
 </html>
