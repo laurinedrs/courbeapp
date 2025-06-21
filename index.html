@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <title>Test Courbe de Ritaline</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -17,12 +18,11 @@
   </style>
 </head>
 <body>
+  <h1>Test Courbe de Ritaline</h1>
   <canvas id="ritalineChart"></canvas>
 
   <script>
-    const canvas = document.getElementById('ritalineChart');
-    const ctx = canvas.getContext('2d');
-    let chart; // référence globale au graphe
+    const ctx = document.getElementById('ritalineChart').getContext('2d');
 
     function concentrationRitalineLP(t, dose) {
       const LI = dose * 0.5;
@@ -62,59 +62,61 @@
         return `${heure}h${minutes.toString().padStart(2, '0')}`;
       });
 
-      chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: 'Concentration de Ritaline (mg)',
-            data: concentrations,
-            borderColor: 'blue',
-            backgroundColor: 'transparent',
-            fill: false,
-            tension: 0.3,
-            pointRadius: 0,
-            borderWidth: 3
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'mg dans le corps'
-              }
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = concentrations;
+      chart.update();
+    }
+
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Concentration de Ritaline (mg)',
+          data: [],
+          borderColor: 'blue',
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: 0.3,
+          pointRadius: 0,
+          borderWidth: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'mg dans le corps'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Heure'
             },
-            x: {
-              title: {
-                display: true,
-                text: 'Heure'
-              },
-              ticks: {
-                maxRotation: 90,
-                minRotation: 60
-              }
+            ticks: {
+              maxRotation: 90,
+              minRotation: 60
             }
           }
         }
-      });
-    }
+      }
+    });
 
-    // Création initiale (vide)
-    createChart([]);
-
-    // Écoute de Thunkable
-    window.addEventListener("message", (event) => {
+    // 🔁 Écoute les messages de Thunkable via Web Viewer
+    window.addEventListener("message", event => {
       try {
-        const cleaned = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        console.log("Données reçues :", cleaned);
-
-        if (chart) chart.destroy();
-        createChart(cleaned);
+        const data = JSON.parse(event.data);
+        if (Array.isArray(data)) {
+          createChart(data);
+        } else {
+          console.warn("Format de données inattendu :", data);
+        }
       } catch (e) {
-        console.error("Erreur lors du parsing JSON :", e);
+        console.error("Erreur JSON :", e, "Contenu reçu :", event.data);
       }
     });
   </script>
