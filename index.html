@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Test Courbe de Ritaline</title>
+  <meta charset="UTF-8" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -24,7 +23,7 @@
   <script>
     const canvas = document.getElementById('ritalineChart');
     const ctx = canvas.getContext('2d');
-    let chart = null;
+    let chart;
 
     function concentrationRitalineLP(t, dose) {
       const LI = dose * 0.5;
@@ -47,12 +46,17 @@
       const concentrations = heures.map(h => {
         const t = parseFloat(h);
         let total = 0;
-        doses.forEach(({ heure, dose }) => {
+        doses.forEach(entry => {
+          const heure = entry.heure || "00:00";
+          const doseStr = entry.dose || "0";
+          const dose = parseFloat(doseStr);
+          if (isNaN(dose)) return;
+
           const [hStr, mStr] = heure.split(":");
           const heurePrise = parseInt(hStr) + parseInt(mStr) / 60;
           const delta = t - heurePrise;
           if (delta >= 0 && delta <= 12) {
-            total += concentrationRitalineLP(delta, parseFloat(dose));
+            total += concentrationRitalineLP(delta, dose);
           }
         });
         return total.toFixed(2);
@@ -64,9 +68,7 @@
         return `${heure}h${minutes.toString().padStart(2, '0')}`;
       });
 
-      if (chart) {
-        chart.destroy();
-      }
+      if (chart) chart.destroy();
 
       chart = new Chart(ctx, {
         type: 'line',
@@ -107,26 +109,24 @@
       });
     }
 
-    // 🔁 Quand l’app Thunkable envoie une dose
-    window.addEventListener('message', (event) => {
-      console.log("🧪 Donnée brute reçue :", event.data);
-
+    // 🔄 Communication Thunkable > Web Viewer
+    window.addEventListener("message", (event) => {
       try {
-        const parsed = JSON.parse(event.data);     // 1ère fois : transforme en string JSON
-        const data = JSON.parse(parsed);            // 2ème fois : transforme en tableau d’objets
+        const message = event.data;
+        console.log("🧪 Donnée brute reçue :", message);
+
+        const data = JSON.parse(message);
         console.log("✅ JSON interprété :", data);
-        createChart(data);
-      } catch (error) {
-        console.error("Erreur de parsing JSON :", error);
+
+        if (Array.isArray(data)) {
+          createChart(data);
+        } else {
+          console.warn("⛔ Format inattendu :", data);
+        }
+      } catch (e) {
+        console.error("Erreur de parsing JSON :", e);
       }
     });
-
-    // Données par défaut au chargement
-    const testData = [
-      { heure: "08:00", dose: "10" },
-      { heure: "13:00", dose: "20" }
-    ];
-    createChart(testData);
   </script>
 </body>
 </html>
