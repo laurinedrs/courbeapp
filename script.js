@@ -7,7 +7,7 @@ function calculerEtAfficherCourbe(doses) {
   });
 
   doses.forEach(d => {
-    const dose = Number(d.dose);
+    const dose = parseFloat(d.dose);
     const [h, m] = d.heure.split("h").map(Number);
     const startIndex = ((h - 6) * 4) + Math.floor(m / 15);
     if (startIndex >= 0 && startIndex < courbe.length) {
