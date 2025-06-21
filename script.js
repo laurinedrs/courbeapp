@@ -1,5 +1,6 @@
 function calculerEtAfficherCourbe(doses) {
-  const courbe = Array(60).fill(0); // de 6h00 à 21h45 par pas de 15min
+  const courbe = Array(60).fill(0); // de 6h00 à 21h45, par pas de 15min
+
   const labels = Array.from({ length: 60 }, (_, i) => {
     const heure = 6 + Math.floor(i / 4);
     const minute = (i % 4) * 15;
@@ -7,10 +8,13 @@ function calculerEtAfficherCourbe(doses) {
   });
 
   doses.forEach(d => {
-    const dose = Number(d.dose);
+    const dose = parseFloat(d.dose);
     const [h, m] = d.heure.split("h").map(Number);
-    const startIndex = ((h - 6) * 4) + Math.floor(m / 15);
-    if (startIndex >= 0 && startIndex < courbe.length) {
+    const startIndex = (h - 6) * 4 + Math.floor(m / 15);
+
+    console.log(`💊 Dose: ${dose}mg à ${h}h${m} → index ${startIndex}`);
+
+    if (!isNaN(startIndex) && startIndex >= 0 && startIndex < courbe.length) {
       courbe[startIndex] += dose * 0.3;
       if (startIndex + 1 < courbe.length) courbe[startIndex + 1] += dose * 0.4;
       if (startIndex + 2 < courbe.length) courbe[startIndex + 2] += dose * 0.2;
@@ -34,9 +38,10 @@ function calculerEtAfficherCourbe(doses) {
       }]
     },
     options: {
-      responsive: true,
       scales: {
-        y: { beginAtZero: true }
+        y: {
+          beginAtZero: true
+        }
       }
     }
   });
