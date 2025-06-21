@@ -27,12 +27,10 @@
     function concentrationRitalineLP(t, dose) {
       const LI = dose * 0.5;
       const LP = dose * 0.5;
-
       const C_LI = LI * Math.exp(-1.2 * t);
       const delay = 3;
       const tLP = Math.max(t - delay, 0);
       const C_LP = LP * (tLP / 2) * Math.exp(-0.3 * tLP);
-
       return C_LI + C_LP;
     }
 
@@ -106,32 +104,26 @@
       }
     });
 
-    // ✅ RÉCEPTION & PARSE FINAL
+    // 🔁 Listener avec triple fallback
     window.addEventListener("message", event => {
+      let raw = event.data;
+      console.log("🔹 Donnée reçue brute :", raw);
+
       try {
-        let data = event.data;
-        console.log("Reçu :", data);
+        let parsed = raw;
 
-        // 1er parse
-        if (typeof data === "string") {
-          data = JSON.parse(data);
-        }
+        if (typeof parsed === "string") parsed = JSON.parse(parsed);
+        if (typeof parsed === "string") parsed = JSON.parse(parsed); // double
 
-        // 2e parse si nécessaire (parfois le premier parse donne encore une string)
-        if (typeof data === "string") {
-          data = JSON.parse(data);
-        }
+        console.log("✅ Après parsing :", parsed);
 
-        console.log("Après parsing :", data);
-
-        if (Array.isArray(data)) {
-          createChart(data);
+        if (Array.isArray(parsed)) {
+          createChart(parsed);
         } else {
-          console.error("Format inattendu :", data);
+          console.warn("⛔ Format inattendu après parsing :", parsed);
         }
-
       } catch (e) {
-        console.error("Erreur parsing double JSON :", e);
+        console.error("🚨 Erreur lors du parsing :", e);
       }
     });
   </script>
