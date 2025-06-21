@@ -112,14 +112,16 @@
       console.log("🧪 Donnée brute reçue :", event.data);
 
       try {
-        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        const parsed = JSON.parse(event.data);     // 1ère fois : transforme en string JSON
+        const data = JSON.parse(parsed);            // 2ème fois : transforme en tableau d’objets
+        console.log("✅ JSON interprété :", data);
         createChart(data);
       } catch (error) {
         console.error("Erreur de parsing JSON :", error);
       }
     });
 
-    // Données par défaut si aucun message n'est reçu
+    // Données par défaut au chargement
     const testData = [
       { heure: "08:00", dose: "10" },
       { heure: "13:00", dose: "20" }
