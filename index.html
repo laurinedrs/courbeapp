@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Test Courbe de Ritaline</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -22,25 +22,38 @@
   <canvas id="ritalineChart"></canvas>
 
   <script>
-    const ctx = document.getElementById('ritalineChart').getContext('2d');
+    const canvas = document.getElementById("ritalineChart");
+    const ctx = canvas.getContext("2d");
 
     function concentrationRitalineLP(t, dose) {
       const LI = dose * 0.5;
       const LP = dose * 0.5;
+
       const C_LI = LI * Math.exp(-1.2 * t);
       const delay = 3;
       const tLP = Math.max(t - delay, 0);
       const C_LP = LP * (tLP / 2) * Math.exp(-0.3 * tLP);
+
       return C_LI + C_LP;
     }
 
-    function createChart(doses) {
+    function generateLabels() {
+      const heures = [];
+      for (let h = 6; h <= 22; h += 0.25) {
+        const heure = Math.floor(h);
+        const minutes = Math.round((h - heure) * 60);
+        heures.push(`${heure}h${minutes.toString().padStart(2, '0')}`);
+      }
+      return heures;
+    }
+
+    function generateData(doses) {
       const heures = [];
       for (let h = 6; h <= 22; h += 0.25) {
         heures.push(h.toFixed(2));
       }
 
-      const concentrations = heures.map(h => {
+      return heures.map(h => {
         const t = parseFloat(h);
         let total = 0;
         doses.forEach(({ heure, dose }) => {
@@ -53,22 +66,12 @@
         });
         return total.toFixed(2);
       });
-
-      const labels = heures.map(h => {
-        const heure = Math.floor(h);
-        const minutes = Math.round((h - heure) * 60);
-        return `${heure}h${minutes.toString().padStart(2, '0')}`;
-      });
-
-      chart.data.labels = labels;
-      chart.data.datasets[0].data = concentrations;
-      chart.update();
     }
 
-    const chart = new Chart(ctx, {
+    let chart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: [],
+        labels: generateLabels(),
         datasets: [{
           label: 'Concentration de Ritaline (mg)',
           data: [],
@@ -76,8 +79,7 @@
           backgroundColor: 'transparent',
           fill: false,
           tension: 0.3,
-          pointRadius: 0,
-          borderWidth: 3
+          pointRadius: 0
         }]
       },
       options: {
@@ -104,26 +106,19 @@
       }
     });
 
-    // 🔁 Listener avec triple fallback
-    window.addEventListener("message", event => {
-      let raw = event.data;
-      console.log("🔹 Donnée reçue brute :", raw);
-
+    window.addEventListener("message", (event) => {
       try {
-        let parsed = raw;
+        const json = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
 
-        if (typeof parsed === "string") parsed = JSON.parse(parsed);
-        if (typeof parsed === "string") parsed = JSON.parse(parsed); // double
-
-        console.log("✅ Après parsing :", parsed);
-
-        if (Array.isArray(parsed)) {
-          createChart(parsed);
+        if (Array.isArray(json) && json.length > 0 && json[0].heure && json[0].dose) {
+          const data = generateData(json);
+          chart.data.datasets[0].data = data;
+          chart.update();
         } else {
-          console.warn("⛔ Format inattendu après parsing :", parsed);
+          console.warn("Format JSON inattendu reçu :", json);
         }
       } catch (e) {
-        console.error("🚨 Erreur lors du parsing :", e);
+        console.error("Erreur lors du parsing JSON :", e);
       }
     });
   </script>
