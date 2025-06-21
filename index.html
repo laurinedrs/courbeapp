@@ -17,6 +17,7 @@
   </style>
 </head>
 <body>
+  <h1>Test Courbe de Ritaline</h1>
   <canvas id="ritalineChart"></canvas>
 
   <script>
@@ -100,12 +101,16 @@
       });
     }
 
-    // ✅ Simulation de 2 doses pour test
-    const testData = [
-      { heure: "08:00", dose: 10 },
-      { heure: "13:00", dose: 20 }
-    ];
-    createChart(testData);
+    // ✅ Ecoute les messages envoyés depuis Thunkable
+    window.addEventListener('message', (event) => {
+      console.log("Message reçu depuis Thunkable :", event.data);
+      try {
+        const data = JSON.parse(event.data);
+        createChart(data);
+      } catch (e) {
+        console.error("Erreur lors du parsing JSON :", e);
+      }
+    });
   </script>
 </body>
 </html>
