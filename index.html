@@ -106,30 +106,32 @@
       }
     });
 
-    // 🔁 Corrigé : parse deux fois si nécessaire
+    // ✅ RÉCEPTION & PARSE FINAL
     window.addEventListener("message", event => {
       try {
-        let payload = event.data;
+        let data = event.data;
+        console.log("Reçu :", data);
 
-        // 1er parse : convertit la chaîne JSON vers un tableau ou objet
-        if (typeof payload === "string") {
-          payload = JSON.parse(payload);
+        // 1er parse
+        if (typeof data === "string") {
+          data = JSON.parse(data);
         }
 
-        // 2e parse si on a encore une string dans un tableau
-        if (typeof payload === "string") {
-          payload = JSON.parse(payload);
+        // 2e parse si nécessaire (parfois le premier parse donne encore une string)
+        if (typeof data === "string") {
+          data = JSON.parse(data);
         }
 
-        // Vérification et affichage
-        if (Array.isArray(payload)) {
-          createChart(payload);
+        console.log("Après parsing :", data);
+
+        if (Array.isArray(data)) {
+          createChart(data);
         } else {
-          console.warn("Message non valide :", payload);
+          console.error("Format inattendu :", data);
         }
 
-      } catch (err) {
-        console.error("Erreur lors du parsing :", err, event.data);
+      } catch (e) {
+        console.error("Erreur parsing double JSON :", e);
       }
     });
   </script>
