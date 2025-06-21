@@ -106,20 +106,22 @@
       }
     }
 
-    // 🔄 Mise à jour en écoutant les messages de Thunkable
+    // 🔄 Réception des messages depuis Thunkable
     window.addEventListener('message', event => {
       try {
         const data = JSON.parse(event.data);
         if (Array.isArray(data)) {
           console.log("✅ Données reçues :", data);
           createChart(data);
+        } else {
+          console.warn("⛔ Données reçues mais pas sous forme de tableau :", data);
         }
       } catch (e) {
-        console.error("❌ Erreur de parsing :", e);
+        console.error("❌ Erreur de parsing du message :", e, "message brut :", event.data);
       }
     });
 
-    // (Optionnel) charge initiale vide
+    // Charger une courbe vide au départ
     createChart([]);
   </script>
 </body>
