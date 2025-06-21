@@ -1,5 +1,5 @@
 function calculerEtAfficherCourbe(doses) {
-  const courbe = Array(60).fill(0); // de 6h00 à 21h45, par pas de 15min
+  const courbe = Array(60).fill(0); // de 6h00 à 21h45
 
   const labels = Array.from({ length: 60 }, (_, i) => {
     const heure = 6 + Math.floor(i / 4);
@@ -11,8 +11,6 @@ function calculerEtAfficherCourbe(doses) {
     const dose = parseFloat(d.dose);
     const [h, m] = d.heure.split("h").map(Number);
     const startIndex = (h - 6) * 4 + Math.floor(m / 15);
-
-    console.log(`💊 Dose: ${dose}mg à ${h}h${m} → index ${startIndex}`);
 
     if (!isNaN(startIndex) && startIndex >= 0 && startIndex < courbe.length) {
       courbe[startIndex] += dose * 0.3;
@@ -46,3 +44,13 @@ function calculerEtAfficherCourbe(doses) {
     }
   });
 }
+
+// Lecture des données envoyées par Thunkable
+window.addEventListener("message", function (event) {
+  try {
+    const doses = JSON.parse(event.data);
+    calculerEtAfficherCourbe(doses);
+  } catch (e) {
+    console.error("Erreur dans les données reçues :", e);
+  }
+});
