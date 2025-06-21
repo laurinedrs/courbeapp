@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Courbe Ritaline</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="script.js" defer></script>
   <style>
     body {
       font-family: sans-serif;
@@ -24,21 +25,5 @@
   <div id="chart-container">
     <canvas id="myChart"></canvas>
   </div>
-
-  <script>
-    window.addEventListener("message", function (event) {
-      try {
-        const doses = JSON.parse(event.data);
-        console.log("📨 Données reçues :", doses);
-
-        const script = document.createElement("script");
-        script.src = "script.js";
-        script.onload = () => calculerEtAfficherCourbe(doses);
-        document.body.appendChild(script);
-      } catch (e) {
-        console.error("❌ Erreur lors de la réception des données :", e);
-      }
-    });
-  </script>
 </body>
 </html>
