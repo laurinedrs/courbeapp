@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Test Courbe de Ritaline</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -22,8 +22,9 @@
   <canvas id="ritalineChart"></canvas>
 
   <script>
-    const canvas = document.getElementById("ritalineChart");
-    const ctx = canvas.getContext("2d");
+    const canvas = document.getElementById('ritalineChart');
+    const ctx = canvas.getContext('2d');
+    let chart = null;
 
     function concentrationRitalineLP(t, dose) {
       const LI = dose * 0.5;
@@ -37,23 +38,13 @@
       return C_LI + C_LP;
     }
 
-    function generateLabels() {
-      const heures = [];
-      for (let h = 6; h <= 22; h += 0.25) {
-        const heure = Math.floor(h);
-        const minutes = Math.round((h - heure) * 60);
-        heures.push(`${heure}h${minutes.toString().padStart(2, '0')}`);
-      }
-      return heures;
-    }
-
-    function generateData(doses) {
+    function createChart(doses) {
       const heures = [];
       for (let h = 6; h <= 22; h += 0.25) {
         heures.push(h.toFixed(2));
       }
 
-      return heures.map(h => {
+      const concentrations = heures.map(h => {
         const t = parseFloat(h);
         let total = 0;
         doses.forEach(({ heure, dose }) => {
@@ -66,61 +57,74 @@
         });
         return total.toFixed(2);
       });
-    }
 
-    let chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: generateLabels(),
-        datasets: [{
-          label: 'Concentration de Ritaline (mg)',
-          data: [],
-          borderColor: 'blue',
-          backgroundColor: 'transparent',
-          fill: false,
-          tension: 0.3,
-          pointRadius: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'mg dans le corps'
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Heure'
+      const labels = heures.map(h => {
+        const heure = Math.floor(h);
+        const minutes = Math.round((h - heure) * 60);
+        return `${heure}h${minutes.toString().padStart(2, '0')}`;
+      });
+
+      if (chart) {
+        chart.destroy();
+      }
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Concentration de Ritaline (mg)',
+            data: concentrations,
+            borderColor: 'blue',
+            backgroundColor: 'transparent',
+            fill: false,
+            tension: 0.3,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'mg dans le corps'
+              }
             },
-            ticks: {
-              maxRotation: 90,
-              minRotation: 60
+            x: {
+              title: {
+                display: true,
+                text: 'Heure'
+              },
+              ticks: {
+                maxRotation: 90,
+                minRotation: 60
+              }
             }
           }
         }
-      }
-    });
+      });
+    }
 
-    window.addEventListener("message", (event) => {
+    // 🔁 Quand l’app Thunkable envoie une dose
+    window.addEventListener('message', (event) => {
+      console.log("🧪 Donnée brute reçue :", event.data);
+
       try {
-        const json = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-
-        if (Array.isArray(json) && json.length > 0 && json[0].heure && json[0].dose) {
-          const data = generateData(json);
-          chart.data.datasets[0].data = data;
-          chart.update();
-        } else {
-          console.warn("Format JSON inattendu reçu :", json);
-        }
-      } catch (e) {
-        console.error("Erreur lors du parsing JSON :", e);
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        createChart(data);
+      } catch (error) {
+        console.error("Erreur de parsing JSON :", error);
       }
     });
+
+    // Données par défaut si aucun message n'est reçu
+    const testData = [
+      { heure: "08:00", dose: "10" },
+      { heure: "13:00", dose: "20" }
+    ];
+    createChart(testData);
   </script>
 </body>
 </html>
