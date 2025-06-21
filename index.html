@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <title>Test Courbe de Ritaline</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -23,15 +24,16 @@
   <script>
     const canvas = document.getElementById('ritalineChart');
     const ctx = canvas.getContext('2d');
-    let chartInstance = null;
 
     function concentrationRitalineLP(t, dose) {
       const LI = dose * 0.5;
       const LP = dose * 0.5;
+
       const C_LI = LI * Math.exp(-1.2 * t);
       const delay = 3;
       const tLP = Math.max(t - delay, 0);
       const C_LP = LP * (tLP / 2) * Math.exp(-0.3 * tLP);
+
       return C_LI + C_LP;
     }
 
@@ -61,68 +63,63 @@
         return `${heure}h${minutes.toString().padStart(2, '0')}`;
       });
 
-      if (chartInstance) {
-        chartInstance.data.labels = labels;
-        chartInstance.data.datasets[0].data = concentrations;
-        chartInstance.update();
-      } else {
-        chartInstance = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [{
-              label: 'Concentration de Ritaline (mg)',
-              data: concentrations,
-              borderColor: 'blue',
-              backgroundColor: 'transparent',
-              fill: false,
-              tension: 0.3,
-              pointRadius: 0
-            }]
-          },
-          options: {
-            responsive: true,
-            scales: {
-              y: {
-                beginAtZero: true,
-                title: {
-                  display: true,
-                  text: 'mg dans le corps'
-                }
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Concentration de Ritaline (mg)',
+            data: concentrations,
+            borderColor: 'blue',
+            backgroundColor: 'transparent',
+            fill: false,
+            tension: 0.3,
+            pointRadius: 0,
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'mg dans le corps'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Heure'
               },
-              x: {
-                title: {
-                  display: true,
-                  text: 'Heure'
-                },
-                ticks: {
-                  maxRotation: 90,
-                  minRotation: 60
-                }
+              ticks: {
+                maxRotation: 90,
+                minRotation: 60
               }
             }
           }
-        });
-      }
+        }
+      });
     }
 
-    // 🔄 Réception des messages depuis Thunkable
-    window.addEventListener('message', event => {
+    // 🔁 Ecoute des messages envoyés depuis Thunkable
+    window.addEventListener("message", function (event) {
       try {
         const data = JSON.parse(event.data);
         if (Array.isArray(data)) {
-          console.log("✅ Données reçues :", data);
+          console.log("📥 Données reçues de Thunkable :", data);
           createChart(data);
         } else {
-          console.warn("⛔ Données reçues mais pas sous forme de tableau :", data);
+          console.warn("⚠️ Format inattendu :", data);
         }
       } catch (e) {
-        console.error("❌ Erreur de parsing du message :", e, "message brut :", event.data);
+        console.error("❌ Erreur de parsing JSON :", e, event.data);
       }
-    });
+    }, false);
 
-    // Charger une courbe vide au départ
-    createChart([]);
+    // 🧪 Optionnel : données de test si pas de message
+    // createChart([{ heure: "08:00", dose: 10 }, { heure: "13:00", dose: 20 }]);
   </script>
 </body>
 </html>
