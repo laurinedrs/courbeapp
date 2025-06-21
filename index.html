@@ -24,6 +24,7 @@
   <script>
     const canvas = document.getElementById('ritalineChart');
     const ctx = canvas.getContext('2d');
+    let chart; // référence globale au graphe
 
     function concentrationRitalineLP(t, dose) {
       const LI = dose * 0.5;
@@ -63,7 +64,7 @@
         return `${heure}h${minutes.toString().padStart(2, '0')}`;
       });
 
-      new Chart(ctx, {
+      chart = new Chart(ctx, {
         type: 'line',
         data: {
           labels,
@@ -103,23 +104,21 @@
       });
     }
 
-    // 🔁 Ecoute des messages envoyés depuis Thunkable
-    window.addEventListener("message", function (event) {
-      try {
-        const data = JSON.parse(event.data);
-        if (Array.isArray(data)) {
-          console.log("📥 Données reçues de Thunkable :", data);
-          createChart(data);
-        } else {
-          console.warn("⚠️ Format inattendu :", data);
-        }
-      } catch (e) {
-        console.error("❌ Erreur de parsing JSON :", e, event.data);
-      }
-    }, false);
+    // Création initiale (vide)
+    createChart([]);
 
-    // 🧪 Optionnel : données de test si pas de message
-    // createChart([{ heure: "08:00", dose: 10 }, { heure: "13:00", dose: 20 }]);
+    // Écoute de Thunkable
+    window.addEventListener("message", (event) => {
+      try {
+        const cleaned = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        console.log("Données reçues :", cleaned);
+
+        if (chart) chart.destroy();
+        createChart(cleaned);
+      } catch (e) {
+        console.error("Erreur lors du parsing JSON :", e);
+      }
+    });
   </script>
 </body>
 </html>
